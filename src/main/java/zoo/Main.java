@@ -1,14 +1,33 @@
 package zoo;
 
+import java.util.Objects;
+
 public class Main {
 
     public static void main(String[] argv) {
+        String configType = null;
+        String filePath = null;
+        boolean isPathAbsolute = false;
+        if (argv.length > 2) throw new IllegalArgumentException();
+        for (int i = 0; i < argv.length; i++) {
+            if (argv[i].contains("-configtype=")) {
+                configType = argv[i].split("=")[1];
+            }
+            if (argv[i].contains("-configfile=")) {
+                filePath = argv[i].split("=")[1];
+                isPathAbsolute = true;
+            }
+        }
+        if (filePath == null)
+            filePath = argv[configType == null ? 0 : 1];
 
-        String filePath = argv[0];
+        filePath = isPathAbsolute ? filePath : Objects.requireNonNull(Main.class.getClassLoader().getResource(filePath)).getPath();
 
         // Create zoo
         Zoo zoo = new Zoo();
         // Add animals to the zoo
+        if (configType != null)
+            zoo.setFileType(configType.equals("json") ? FileType.JSON : FileType.XML);
         zoo.addAnimals(filePath);
 
         // Create user action trigger

@@ -1,6 +1,7 @@
 package zoo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,10 +15,11 @@ import java.util.List;
  */
 @Getter
 public class Zoo {
+
     /**
      * List of all animals in the zoo
      */
-    private List<AnimalSpecies> zooAnimalSpecies;
+    private final List<AnimalSpecies> zooAnimalSpecies;
 
     /**
      * Static field for storing state of ALL carnivore animals
@@ -33,6 +35,9 @@ public class Zoo {
     @Getter @Setter
     private static AnimalState allHerbivoreState;
 
+    @Setter
+    private FileType fileType = null;
+
     /**
      * Initialization of animals list and default states of animal types
      */
@@ -46,9 +51,24 @@ public class Zoo {
     /**
      * Method for adding animals to the zoo from the specified JSON file
      *
-     * @param jsonPath path to JSON file with animals info
+     * @param path path to JSON/XML file with animals info
+     *
      */
-    public void addAnimals(String jsonPath) {
+    public void addAnimals(String path) {
+        if (fileType == null) {
+            if (path.endsWith("json"))
+                addAnimalsJson(path);
+            else if (path.endsWith("xml"))
+                addAnimalsXML(path);
+        } else {
+            if (fileType == FileType.JSON)
+                addAnimalsJson(path);
+            else if (fileType == FileType.XML)
+                addAnimalsXML(path);
+        }
+    }
+
+    private void addAnimalsJson(String jsonPath) {
         ObjectMapper mapper = new ObjectMapper();
         File animalsFile = new File(jsonPath);
         try {
@@ -61,6 +81,18 @@ public class Zoo {
         }
     }
 
+    private void addAnimalsXML(String xmlPath) {
+        XmlMapper xmlMapper = new XmlMapper();
+        File animalsFile = new File(xmlPath);
+        try {
+            AnimalsDataFile animalsData = xmlMapper.readValue(animalsFile, AnimalsDataFile.class);
+            zooAnimalSpecies.addAll(animalsData.getCarnivoreAnimals());
+            zooAnimalSpecies.addAll(animalsData.getHerbivoreAnimals());
+        } catch (IOException e) {
+            System.out.println(e.toString());
+            throw new IllegalStateException("File hasn't been parsed");
+        }
+    }
     /**
      * Method for handling user actions with the specified type of animals
      *
